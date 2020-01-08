@@ -1,4 +1,4 @@
-get_ac_init_version(${Osi_DIR}/../configure.ac OSI)
+get_ac_init_version(${Osi_DIR}/configure.ac OSI)
 
 set(OSI_VERSION_MAJOR   "${OSI_MAJOR_VERSION}"  CACHE STRING "The OSI major version number")
 set(OSI_VERSION_MINOR   "${OSI_MINOR_VERSION}"  CACHE STRING "The OSI minor version number")
@@ -6,14 +6,14 @@ set(OSI_VERSION_RELEASE "${OSI_PATCH_VERSION}"  CACHE STRING "The OSI patch vers
 set(OSI_VERSION         "${OSI_VERSION_STRING}" CACHE STRING "The OSI version")
 
 set(OSI_WC_REVISION "0")
-if (EXISTS "${Osi_DIR}/../.svn")
+if ((EXISTS "${Osi_DIR}/.svn") OR (EXISTS "${Osi_DIR}/../.svn"))
   find_package(Subversion)
   if (Subversion_FOUND)
     Subversion_WC_INFO(${Osi_DIR} OSI)
   endif ()
 endif ()
 
-if (EXISTS "${Osi_DIR}/../.git")
+if ((EXISTS "${Osi_DIR}/.git") OR (EXISTS "${Osi_DIR}/../.git"))
   find_package(Git)
   if (Git_FOUND)
     include(export_git)
@@ -35,6 +35,36 @@ add_definitions(-DOSI_BUILD)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/config_osi.h.in ${CMAKE_BINARY_DIR}/Osi/include/config_osi.h)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/config.h.in     ${CMAKE_BINARY_DIR}/Osi/include/config.h)
+
+#
+# pkg-config file generation
+#
+
+set(prefix           "${CMAKE_INSTALL_PREFIX}")
+set(exec_prefix      "\${prefix}")
+set(libdir           "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+set(includedir       "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
+set(OSILIB_PCLIBS     "")
+set(OSILIB_PCREQUIRES "")
+set(PACKAGE_VERSION   "${OSI_VERSION}")
+
+configure_file(${Osi_DIR}/osi.pc.in           ${CMAKE_BINARY_DIR}/Osi/osi.pc @ONLY)
+configure_file(${Osi_DIR}/osi-unittests.pc.in ${CMAKE_BINARY_DIR}/Osi/osi-unittests.pc @ONLY)
+
+set(libdir         "${Osi_DIR}")
+set(abs_source_dir "${CMAKE_BINARY_DIR}/bin")
+
+configure_file(${Osi_DIR}/osi-uninstalled.pc.in           ${CMAKE_BINARY_DIR}/Osi/osi-uninstalled.pc @ONLY)
+configure_file(${Osi_DIR}/osi-unittests-uninstalled.pc.in ${CMAKE_BINARY_DIR}/Osi/osi-unittests-uninstalled.pc @ONLY)
+
+install(FILES ${CMAKE_BINARY_DIR}/Osi/osi.pc
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/pkg-config/)
+
+install(FILES ${CMAKE_BINARY_DIR}/Osi/osi-unittests.pc
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/pkg-config/)
+#
+# Build
+#
 
 set(Osi_SRC_LIST ${Osi_DIR}/src/Osi/OsiAuxInfo.cpp
                  ${Osi_DIR}/src/Osi/OsiBranchingObject.cpp
@@ -72,6 +102,8 @@ set(Osi_SRC_LIST_Headers ${Osi_DIR}/src/Osi/OsiAuxInfo.hpp
                          ${Osi_DIR}/src/Osi/OsiSolverInterface.hpp
                          ${Osi_DIR}/src/Osi/OsiSolverParameters.hpp)
 
+set(OsiCommonTests_SRC_Headers ${Osi_DIR}/src/OsiCommonTest/OsiUnitTests.hpp)
+
 include_directories(${Osi_DIR}/src)
 include_directories(${Osi_DIR}/src/Osi)
 include_directories(${CoinUtils_DIR}/src)
@@ -104,14 +136,16 @@ set_include_directories(libOsi)
 set_include_directories(libOsiCommonTests)
 
 install(TARGETS libOsi libOsiCommonTests 
-        DESTINATION lib)
+        RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/static)
 
-install(FILES ${Osi_SRC_LIST_Headers} 
-        DESTINATION include/coin)
+install(FILES ${Osi_SRC_LIST_Headers} ${OsiCommonTests_SRC_Headers} 
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/coin)
 
 install(FILES ${CMAKE_BINARY_DIR}/Osi/include/config_osi.h
-        DESTINATION include/coin
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/coin
         RENAME OsiConfig.h)
 
 install(FILES ${CMAKE_BINARY_DIR}/Osi/include/config_osi.h
-        DESTINATION include/coin)
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/coin)

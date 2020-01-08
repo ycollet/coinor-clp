@@ -6,18 +6,16 @@ set(prefix               "${CMAKE_INSTALL_PREFIX}")
 set(exec_prefix          "\${prefix}")
 set(libdir               "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 set(includedir           "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
-set(OSICLPLIB_PCLIBS     "")
-set(OSICLPLIB_PCREQUIRES "clp osi")
 set(PACKAGE_VERSION      "${CLP_VERSION}")
 
-configure_file(${Clp_DIR}/src/OsiClp/osi-clp.pc.in ${CMAKE_BINARY_DIR}/Clp/osi-clp.pc @ONLY)
+configure_file(${DyLP_DIR}/src/OsiDylp/osi-dylp.pc.in ${CMAKE_BINARY_DIR}/DyLP/osi-dylp.pc @ONLY)
 
-set(libdir         "${Clp_DIR}")
+set(libdir         "${DyLP_DIR}")
 set(abs_source_dir "${CMAKE_BINARY_DIR}/bin")
 
-configure_file(${Clp_DIR}/src/OsiClp/osi-clp-uninstalled.pc.in ${CMAKE_BINARY_DIR}/Clp/osi-clp-uninstalled.pc @ONLY)
+configure_file(${DyLP_DIR}/src/OsiDylp/osi-dylp-uninstalled.pc.in ${CMAKE_BINARY_DIR}/DyLP/osi-dylp-uninstalled.pc @ONLY)
 
-install(FILES ${CMAKE_BINARY_DIR}/Clp/osi-clp.pc
+install(FILES ${CMAKE_BINARY_DIR}/DyLP/osi-dylp.pc
         DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/pkg-config/)
 
 #
@@ -26,38 +24,45 @@ install(FILES ${CMAKE_BINARY_DIR}/Clp/osi-clp.pc
 
 include_directories(${BuildTools_DIR}/headers)
 include_directories(${CoinUtils_DIR}/src)
-include_directories(${Clp_DIR}/src)
-include_directories(${Clp_DIR}/src/OsiClp)
+include_directories(${DyLP_DIR}/src/Dylp)
+include_directories(${DyLP_DIR}/src/DylpStdLib)
+include_directories(${DyLP_DIR}/src/OsiDyLP)
 include_directories(${Osi_DIR}/src)
 include_directories(${Osi_DIR}/src/Osi)
 
 macro(set_include_directories TARGET)
-  target_include_directories(${TARGET} BEFORE PRIVATE ${CMAKE_BINARY_DIR}/Clp/include)
+  target_include_directories(${TARGET} BEFORE PRIVATE ${CMAKE_BINARY_DIR}/DyLP/include)
   target_include_directories(${TARGET} BEFORE PRIVATE ${CMAKE_BINARY_DIR}/CoinUtils/include)
   target_include_directories(${TARGET} BEFORE PRIVATE ${CMAKE_BINARY_DIR}/Osi/include)
 endmacro ()
 
+add_definitions(-DODSI_PARANOIA=0)
 if (WIN32)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_DEPRECATE)
 endif ()
 
+set(OsiDyLP_SRC_LIST ${DyLP_DIR}/src/OsiDylp/OsiDylpMessages.cpp
+                     ${DyLP_DIR}/src/OsiDylp/OsiDylpSimplex.cpp
+                     ${DyLP_DIR}/src/OsiDylp/OsiDylpWarmStartBasis.cpp
+                     ${DyLP_DIR}/src/OsiDylp/OsiDylpPresolve.cpp
+                     ${DyLP_DIR}/src/OsiDylp/OsiDylpSolverInterface.cpp)
+
 if (ENABLE_SHARED_LIBRARIES)
-  add_library(libOsiClp SHARED ${Clp_DIR}/src/OsiClp/OsiClpSolverInterface.cpp)
+  add_library(libOsiDyLP SHARED ${OsiDyLP_SRC_LIST})
 else ()
-  add_library(libOsiClp STATIC ${Clp_DIR}/src/OsiClp/OsiClpSolverInterface.cpp)
-endif ()
-if (COIN_COMPILE_LTO)
-  set_target_properties(libOsiClp PROPERTIES INTERPROCEDURAL_OPTIMIZATION true)
+  add_library(libOsiDyLP STATIC ${OsiDyLP_SRC_LIST})
 endif ()
 if (NOT WIN32 OR MINGW)
-  set_target_properties(libOsiClp PROPERTIES PREFIX "")
+  set_target_properties(libOsiDyLP PROPERTIES PREFIX "")
 endif ()
-set_include_directories(libOsiClp)
+set_include_directories(libOsiDyLP)
 
-install(TARGETS libOsiClp 
+install(TARGETS libOsiDyLP 
         RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/static)
 
-install(FILES ${Clp_DIR}/src/OsiClp/OsiClpSolverInterface.hpp
+install(FILES ${DyLP_DIR}/src/OsiDylp/OsiDylpMessages.hpp
+              ${DyLP_DIR}/src/OsiDylp/OsiDylpSolverInterface.hpp
+              ${DyLP_DIR}/src/OsiDylp/OsiDylpWarmStartBasis.hpp
         DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/coin)

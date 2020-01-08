@@ -49,6 +49,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
                       ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
+include(GNUInstallDirs)
+
 Enable_Testing ()
 
 #------------------------------------------------------------
@@ -696,15 +698,15 @@ endif ()
 ######################
 
 install(TARGETS glpk
-        DESTINATION lib)
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 
 if (GLPK_BUILD_EXAMPLES)
   install(TARGETS glpsol
-          DESTINATION bin)
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR})
 endif ()
 
 install(FILES src/glpk.h
-        DESTINATION include)
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR})
 
 ##########################################
 #                                        #
